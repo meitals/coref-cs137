@@ -1,0 +1,32 @@
+Project 2 instructions:
+
+
+The goal of this project is to develop a coreference resolution system, using the the CoNLL 2012 shared task data set for English. 
+
+**Data**:
+
+The data you will need can be found here:
+
+/home/j/xuen/teaching/cosi137/spring-2016/projects/project2/conll-2012.tgz
+
+Unpack this package, and you will find the CoNLL 2012 shared task data for English. Use the training set for training, the development for tuning your model, and the test set for reporting the final score of your system.
+
+Your output should be in the same format as the provided gold standard data set.
+As we discussed in class, you can use as input the entity mentions identified in the coreference chains, but you can't (obviously) use the id number. Note that you don't have to use the exact same id numbers in your ouput. What's imporant is that each entity mention is its correct cluster.
+
+There are many files in the package, but not all of them are necessary. You just need the files ending with the .auto_conll extension. 
+
+**Evaluation**:
+
+The scorer can be found here: 
+
+/home/j/xuen/teaching/cosi137/spring-2016/projects/project2/reference-coreference-scores-8.01.tar.gz
+
+Use the scorer to evaluate your model.
+
+
+
+
+
+
+
