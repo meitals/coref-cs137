@@ -204,12 +204,12 @@ class Document(object):
 					continue
 				elif line == '\n':
 					new_sent = Sentence(curr_sent_list, sent_number)
+					self.sentences.append(new_sent)
 					sent_number += 1
 					curr_sent_list = []
 				else:
 					curr_sent_list.append(line.split())
-			self.sentences.extend(curr_sent_list)
-									
+
 class Corpus(object):
 	"""collection of conll files"""
 	def __init__(self, rootdir):
