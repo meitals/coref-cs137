@@ -100,11 +100,12 @@ class Entity:
 		Holds an entire entity. Documents will hold a
 		list of entities for the entire document. 
 	"""
-	def __init__(self, sentence_index, tokens, full_string, parse, ne_type):
+	def __init__(self, sentence_index, tokens, full_string, parse, ne_type, filename):
 		self.sentence_index = sentence_index
 		self.tokens = tokens
 		self.full_string = full_string
 		self.parse = parse
+		self.filename = filename
 		self.ne_type = ne_type
 
 
@@ -115,6 +116,7 @@ class Document(object):
 		self.sentences = [] #list of Sentence objects
 		self.load_sents()
 		self.entities = []
+		self.load_entities()
 		self.chains = []
 
 	def load_entities(self):
@@ -171,9 +173,11 @@ class Document(object):
 		"""
 		self.entities.append(Entity(sentence.sent_number,
 									token_list,
-									" ".jon([token.token for token in token_list]),
+									" ".join([token.token for token in token_list]),
 									"PARSE", 
-									token_list[0].ne))
+									token_list[0].ne, 
+									token_list[0].filename))
+
 
 	def make_entities_from_duplicate_ids(self, sentence):
 		"""
