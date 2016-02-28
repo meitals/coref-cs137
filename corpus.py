@@ -5,6 +5,8 @@ This version has sentence objects
 """
 
 import os, re, nltk.tree
+from collections import Counter
+
 
 class Token(object):
 	"""all the attributes for a single line in a conll file"""
@@ -28,6 +30,7 @@ class Token(object):
 		self.ne = None
 		self.args = []
 		self.coref_ids = []
+		self.output_ids = [] # derived from our work
 	
 class Sentence(object):
 	def __init__(self, sent_list, sent_number):
@@ -92,12 +95,105 @@ class Sentence(object):
 		#print(self.parse_tree)
 
 
+class Entity:
+	"""
+		Holds an entire entity. Documents will hold a
+		list of entities for the entire document. 
+	"""
+	def __init__(self, sentence_index, tokens, full_string, parse, ne_type):
+		self.sentence_index = sentence_index
+		self.tokens = tokens
+		self.full_string = full_string
+		self.parse = parse
+		self.ne_type = ne_type
+
+
 class Document(object):
 	"""reads a single file and creates Sentence objects"""
 	def __init__(self, fpath):
 		self.fpath = fpath
 		self.sentences = [] #list of Sentence objects
 		self.load_sents()
+		self.entities = []
+		self.chains = []
+
+	def load_entities(self):
+		"""
+			if 2 token.coref_ids #s of the same type, then match one and
+			create an entity from one
+		"""
+		for sent in self.sentences:
+			self.load_entities_for_sentence(sent)
+
+	def load_entities_for_sentence(self, sentence):
+		"""
+			Gets the Entities for the individual sentence
+			Stores them in Document.entities
+		"""	
+		# take care of reflexive entities--ie multp. of same coref id on same line
+		self.make_entities_from_duplicate_ids(sentence)
+
+		# now do the regular chains
+		entities_in_progress = {}  #stores entities currently being built
+		for index, token in enumerate(sentence.tokens):
+			if not token.coref_ids:  # this isn't an entity. Creates and removes all in progress
+				self.create_entities_and_clear_dict(sentence, entities_in_progress, entities_in_progress.keys())
+			else: # this is an entity; create/remove selectively.
+				for cid in token.coref_ids:
+					if cid in entities_in_progress:
+						entities_in_progress[cid].append(token)
+					else:
+						entities_in_progress[cid] = [token]
+					# clear not in prog
+					nums_to_clear = [cid for cid in entities_in_progress.keys() if cid not in token.coref_ids]
+					self.create_entities_and_clear_dict(sentence, entities_in_progress, nums_to_clear)
+
+
+	def create_entities_and_clear_dict(self, sentence, entities_in_progress, nums_to_clear):
+		for row in nums_to_clear:
+			self.create_entity(entities_in_progress[row], sentence) 
+			del entities_in_progress[row]  # remove it from the holding tank
+
+	def get_parse(self, token_list):
+		for t in self.tokens:
+			#parse
+			parse_string = t.parse_bit.replace('*', '({} {})'.format(t.pos, t.token))
+			parse_string = re.sub(r'([A-Z])(\()', r'\1 (', parse_string)
+			#if I use an escape character here ^ that ends up in the tree
+			parse_string = parse_string.replace(')(', ') (')
+			self.parse += parse_string
+		return nltk.tree.Tree.fromstring(self.parse)
+
+
+	def create_entity(self, token_list, sentence):
+		"""
+			creates an entity and appends it to self.entities
+		"""
+		self.entities.append(Entity(sentence.sent_number,
+									token_list,
+									" ".jon([token.token for token in token_list]),
+									"PARSE", 
+									token_list[0].ne))
+
+	def make_entities_from_duplicate_ids(self, sentence):
+		"""
+			take care of reflexive entities--ie multp. of same coref id on same line
+		"""
+		for token in sentence.tokens:
+			dup = self.duplicated_id(token.coref_ids)
+			if dup is not None:
+				self.create_entity([token], sentence)
+
+
+	def duplicated_id(self, coref_ids):
+		"""
+			Returns true if there are no duplicate coref bits
+		"""
+		c = Counter([num for num in coref_ids if num != None])
+		for num in c:
+			if c[num] > 1:
+				return num
+		return None
 
 	def load_sents(self):
 		with open(self.fpath) as conllfile:
@@ -108,11 +204,12 @@ class Document(object):
 					continue
 				elif line == '\n':
 					new_sent = Sentence(curr_sent_list, sent_number)
+					self.sentences.append(new_sent)
 					sent_number += 1
 					curr_sent_list = []
 				else:
 					curr_sent_list.append(line.split())
-									
+
 class Corpus(object):
 	"""collection of conll files"""
 	def __init__(self, rootdir):
@@ -128,5 +225,6 @@ class Corpus(object):
 					self.documents.append(Document(fullpath))
 
 if __name__ == '__main__':
-	conll_corpus = Corpus('conll-2012/train')
+	conll_corpus = Corpus('project2/conll-2012/train')
+	print [entity.full_string for entity in conll_corpus.documents[0].entities]
 		
