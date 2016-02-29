@@ -12,9 +12,9 @@ class Sieve(object):
 		self.ceafm_results = np.zeros(4)
 		self.ceafe_results = np.zeros(4)
 		self.blanc_results = np.zeros(4)
-		self.all_results = np.zeros(4)
+		#self.all_results = np.zeros(4)
 
-		self.metrics = [('muc', self.muc_results), ('bcub', self.bcub_results), ('ceafm', self.ceafm_results), ('ceafe', self.ceafe_results), ('blanc', self.blanc_results), ('all', self.all_results)]
+		self.metrics = [('muc', self.muc_results), ('bcub', self.bcub_results), ('ceafm', self.ceafm_results), ('ceafe', self.ceafe_results), ('blanc', self.blanc_results)]
 
 		if os.path.isdir('responses'):
 			shutil.rmtree('responses') #clear from responses dir from previous try
@@ -34,6 +34,8 @@ class Sieve(object):
 			###sieves modify doc.chains###
 			
 			doc.chains = exact_match(doc.entities, doc.chains)
+			#doc.chains = precise_constructs(doc.entities, doc.chains, doc)
+			#doc.chains = cluster_head_match(doc.entities, doc.chains)
 			
 			########END SIEVES###########
 
