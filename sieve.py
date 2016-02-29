@@ -15,8 +15,8 @@ class Sieve(object):
 
 		self.metrics = [('muc', self.muc_results), ('bcub', self.bcub_results), ('ceafm', self.ceafm_results), ('ceafe', self.ceafe_results), ('blanc', self.blanc_results), ('all', self.all_results)]
 
-		shutil.rmtreee('responses') #clear from previous tries
-		os.mkdir('responses') #dir to hold response files
+		shutil.rmtree('responses') #clear from responses dir from previous try
+		os.mkdir('responses') #create dir to hold response files
 
 	def run_sieve(self):
 		"""main function to run all docs through sieve"""
@@ -26,28 +26,43 @@ class Sieve(object):
 			doc.chains = [[ent] for ent in doc.entities]
 
 			######INSERT SIEVES HERE######
+			###sieves modify doc.chains###
 
 
 			########END SIEVES###########
 
 			self.find_output_ids(doc)
-			self.write_response(doc)
-			self.score_document(doc)
+			self.write_response(doc) #add fpath
+			self.score_document(doc) #add fpath
 
 		self.write_results()
 
 			
-	def find_output_ids(self, document):
+	def find_output(self, document):
 		"""adds output coreference chain ids to Token objects"""
-		for chain in document.chains:
-			
-	
+		#TODO: add output coref string
+		for chain_id in len(document.chains):
+			for entity in document.chains[chain_id]:
+				for token in entity.tokens:
+					token.output_ids.append(chain_id)
+
 
 	def write_response(self, document, fpath):
 		"""writes sieve output in conll format to fpath"""
 		with open(fpath, 'w') as outfile:
-			pass
-		
+			
+			curr_doc_part = '0'
+			outfile.write('#begin document ({}); part 000\n'.format(document.filename))
+			for sent in document.sentences:
+				for token in sent:
+					if token.part_number != curr_doc_part:
+						outfile.write('#end document\n')
+						outfile.write('#begin document ({}); part {}\n'.format(token.filename, token.part_number.zfill(3)))
+						curr_doc_part = token.part_number
+					outfile.write(' '.join[token.filename, token.part_number, token.token_number, token.token, token.output_coref_string])
+
+				outfile.write('\n')
+
 
 	def score_document(self, document, response_fpath):
 		"""runs scorer for all metric and updates results"""
