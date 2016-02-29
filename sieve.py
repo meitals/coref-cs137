@@ -128,11 +128,19 @@ class Sieve(object):
 		key_file = document.fpath
 		response_file = response_fpath
 		scorer_path = 'project2/reference-coreference-scorers-8.01/scorer.pl'
+		result_num = 0
+
+		if os.path.isdir('results'):
+			shutil.rmtree('results')
+		os.mkdir('results') 
 
 		for (metric, result_array) in self.metrics:
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
 			print doc_result.split('\n')[-3] #grab line with overall results
+			with open('results/result{}.txt'.format(str(result_num)), 'w') as scorefile:
+				scorefile.write(doc_result)
 			result_array += self.result2array(doc_result.split('\n')[-3])
+			result_num += 1
 
 	def write_results(self):
 		"""write file with final precision/recall/fmeasure"""
