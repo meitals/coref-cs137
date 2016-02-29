@@ -34,7 +34,7 @@ class Sieve(object):
 			###sieves modify doc.chains###
 			
 			doc.chains = exact_match(doc.entities, doc.chains)
-			#doc.chains = precise_constructs(doc.entities, doc.chains, doc)
+			doc.chains = precise_constructs(doc.entities, doc.chains, doc)
 			#doc.chains = cluster_head_match(doc.entities, doc.chains)
 			
 			########END SIEVES###########
@@ -108,7 +108,7 @@ class Sieve(object):
 						outfile.write('#end document\n')
 						outfile.write('#begin document ({}); part {}\n'.format(token.filename, token.part_number.zfill(3)))
 						curr_doc_part = token.part_number
-					outfile.write(' '.join([token.filename, token.part_number, token.token_number, token.token, token.output_coref_string]))
+					outfile.write(' '.join([token.filename, token.part_number, str(token.token_number), token.token, token.output_coref_string]))
 					outfile.write('\n')
 
 				outfile.write('\n')
@@ -130,8 +130,9 @@ class Sieve(object):
 		scorer_path = 'project2/reference-coreference-scorers-8.01/scorer.pl'
 
 		for (metric, result_array) in self.metrics:
+			print(response_file)
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
-			print doc_result.split('\n')[-3] #grab line with overall results
+			print(doc_result.split('\n')[-3]) #grab line with overall results
 			result_array += self.result2array(doc_result.split('\n')[-3])
 
 	def write_results(self):
