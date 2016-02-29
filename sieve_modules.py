@@ -4,16 +4,24 @@ import re
 from corpus import Document
 
 WRITE_LOG = True
-LOGFILE = open("sieve_functions.log")
+LOGFILE = open("sieve_functions.log","w")
 
 def exact_match(entity_list, coreference_chains):
 	"""First pass of the sieve: looks for exact 
 	full_string matches"""
+	print("Trying exact match")
 	chains = []
 	for entity in entity_list:
 		found_chain = False
 		for chain in chains:
 			if entity.full_string == chain[0].full_string: # For exact match, assume all are the same
+				found_proper = False
+				for token in entity.tokens:
+					if "NNP" in token.pos: # Don't assume pronouns match
+						found_proper = True
+						break
+				if not found_proper:
+					continue
 				chain.append(entity)
 				found_chain = True
 				write_log("Found exact match", entity, chain[0])
@@ -95,7 +103,7 @@ def get_between_tokens(entity1, entity2, document):
 
 def write_log(msg, entity1, entity2):
 	if WRITE_LOG:
-		LOGFILE.write(msg+"\t"+entity1.full_string+"\t"+entity2.full_string+"\t" +entity1.document+"\t"+entity1.sent_number+"\t"+entity2.sent_number+"\n")
+		LOGFILE.write(msg+"\t"+entity1.full_string+"\t"+entity2.full_string+"\t" +entity1.filename+"\t"+str(entity1.sentence_index)+"\t"+str(entity2.sentence_index)+"\n")
 
 
 def is_acronym(entity1, entity2):
