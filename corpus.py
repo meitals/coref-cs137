@@ -31,7 +31,7 @@ class Token(object):
 		self.args = []
 		self.coref_ids = []
 		self.output_ids = [] # derived from our work
-		self.output_coref_string = ''
+		self.output_coref_string = '-'
 	
 class Sentence(object):
 	def __init__(self, sent_list, sent_number):

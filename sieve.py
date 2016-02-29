@@ -1,6 +1,7 @@
 from corpus import *
+#from sieve_modules import *
 import numpy as np
-import subprocess
+import subprocess, shutil
 
 class Sieve(object):
 	def __init__(self, rootdir):
@@ -15,11 +16,14 @@ class Sieve(object):
 
 		self.metrics = [('muc', self.muc_results), ('bcub', self.bcub_results), ('ceafm', self.ceafm_results), ('ceafe', self.ceafe_results), ('blanc', self.blanc_results), ('all', self.all_results)]
 
-		shutil.rmtree('responses') #clear from responses dir from previous try
+		if os.path.isdir('responses'):
+			shutil.rmtree('responses') #clear from responses dir from previous try
 		os.mkdir('responses') #create dir to hold response files
 
 	def run_sieve(self):
 		"""main function to run all docs through sieve"""
+
+		filenum = 0
 
 		for doc in self.conll_corpus.documents:
 			#each entity starts out as a singleton
@@ -31,20 +35,58 @@ class Sieve(object):
 
 			########END SIEVES###########
 
-			self.find_output_ids(doc)
-			self.write_response(doc) #add fpath
-			self.score_document(doc) #add fpath
+			self.find_output(doc)
+			response_fpath = 'responses/{}.response'.format(os.path.basename(doc.fpath))
+			self.write_response(doc, response_fpath) 
+			self.score_document(doc, response_fpath)
 
 		self.write_results()
 
 			
 	def find_output(self, document):
 		"""adds output coreference chain ids to Token objects"""
-		#TODO: add output coref string
-		for chain_id in len(document.chains):
+		#create BILU tags for tokens corresponding to coref chains
+		for chain_id in range(len(document.chains)):
 			for entity in document.chains[chain_id]:
-				for token in entity.tokens:
-					token.output_ids.append(chain_id)
+				for i in range(len(entity.tokens)):
+					if len(entity.tokens) == 1:
+						entity.tokens[i].output_ids.append((chain_id, 'U')) #unique	
+					elif i == 0:
+						entity.tokens[i].output_ids.append((chain_id, 'B')) #begin
+					elif i == (len(entity.tokens)-1):
+						entity.tokens[i].output_ids.append((chain_id, 'L')) #last
+					else:
+						entity.tokens[i].output_ids.append((chain_id, 'I')) #inside
+						
+		#format to write coref chains to response file
+		for sent in document.sentences:
+			for token in sent.tokens:
+				if len(token.output_ids) == 1:
+					#token part of entity that is in one coref chain
+
+					chain_id = token.output_ids[0][0]
+					blui_tag = token.output_ids[0][1]
+
+					if blui_tag == 'B':
+						token.output_coref_string = '({}'.format(chain_id)
+					elif blui_tag == 'I':
+						token.output_coref_string = '-'
+					elif blui_tag == 'L':
+						token.output_coref_string = '{})'.format(chain_id)
+					elif blui_tag == 'U':
+						token.output_coref_string = '({})'.format(chain_id)
+				
+				else:
+					#token part of entity that is in multiple coref chains
+					temp_output_list = []
+					for (chain_id, blui_tag) in token.output_ids:
+						if blui_tag == 'B':
+							temp_output_list.append('({}'.format(chain_id))
+						elif blui_tag == 'L':
+							temp_output_list.append('{})'.format(chain_id))
+						elif blui_tag == 'U':
+							temp_output_list.append('({})'.format(chain_id))
+					token.output_coref_string = '|'.join(temp_output_list)
 
 
 	def write_response(self, document, fpath):
@@ -52,14 +94,15 @@ class Sieve(object):
 		with open(fpath, 'w') as outfile:
 			
 			curr_doc_part = '0'
-			outfile.write('#begin document ({}); part 000\n'.format(document.filename))
+			outfile.write('#begin document ({}); part 000\n'.format(document.fpath))
 			for sent in document.sentences:
-				for token in sent:
+				for token in sent.tokens:
 					if token.part_number != curr_doc_part:
 						outfile.write('#end document\n')
 						outfile.write('#begin document ({}); part {}\n'.format(token.filename, token.part_number.zfill(3)))
 						curr_doc_part = token.part_number
-					outfile.write(' '.join[token.filename, token.part_number, token.token_number, token.token, token.output_coref_string])
+					outfile.write(' '.join([token.filename, token.part_number, token.token_number, token.token, token.output_coref_string]))
+					outfile.write('\n')
 
 				outfile.write('\n')
 
@@ -74,7 +117,6 @@ class Sieve(object):
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
 			result_array += np.array(doc_result)
 
-
 	def write_results(self):
 		"""write file with final precision/recall/fmeasure"""
 		with open('sieve_results.txt', 'w') as resultsfile:
@@ -84,3 +126,6 @@ class Sieve(object):
 				f1measure = 2 * precision * recall / (precision * recall)
 				resultsfile.write('Metric: {}\tPrecision: {}\tRecall: {}\tF1Measure: {}\n'.format(metric, precision, recall, f1measure))
 
+if __name__ == '__main__':
+	jst_sieve = Sieve('project2/conll-2012/dev')
+	jst_sieve.run_sieve()
