@@ -158,8 +158,13 @@ class Document(object):
 	def create_entities_and_clear_dict(self, sentence, entities_in_progress, nums_to_clear):
 		for row in nums_to_clear:
 			self.create_entity(entities_in_progress[row], sentence)
-			del entities_in_progress[row]
-		return entities_in_progress
+			#del entities_in_progress[row]
+		
+		new_dict = entities_in_progress.copy()
+		for row in nums_to_clear:
+			del new_dict[row]
+		
+		return new_dict
 
 			# new_dict = entities_in_progress.copy()
 			# entities_in_progress = new_dict
