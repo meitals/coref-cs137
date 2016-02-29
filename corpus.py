@@ -15,7 +15,7 @@ class Token(object):
 		self.sent_number = sent_number
 		self.filename = self.linelist[0]
 		self.part_number = self.linelist[1]
-		self.token_number = self.linelist[2]
+		self.token_number = int(self.linelist[2])
 		self.token = self.linelist[3]
 		self.pos = self.linelist[4]
 		self.parse_bit = self.linelist[5]
