@@ -111,7 +111,7 @@ class Sieve(object):
 		"""runs scorer for all metric and updates results"""
 		key_file = document.fpath
 		response_file = response_fpath
-		scorer_path = 'reference-coference-scorers-8.01/scorer.pl'
+		scorer_path = 'project2/reference-coreference-scorers-8.01/scorer.pl'
 
 		for (metric, result_array) in self.metrics:
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
