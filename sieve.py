@@ -39,6 +39,9 @@ class Sieve(object):
 			
 			########END SIEVES###########
 
+			#ignore singletons
+			doc.chains = [chain for chain in doc.chains if len(chain) > 1]
+
 			self.find_output(doc)
 			response_fpath = 'responses/{}.response'.format(os.path.basename(doc.fpath))
 			self.write_response(doc, response_fpath) 
@@ -108,7 +111,7 @@ class Sieve(object):
 						outfile.write('#end document\n')
 						outfile.write('#begin document ({}); part {}\n'.format(token.filename, token.part_number.zfill(3)))
 						curr_doc_part = token.part_number
-					outfile.write(' '.join([token.filename, token.part_number, token.token_number, token.token, token.output_coref_string]))
+					outfile.write(' '.join([token.filename, token.part_number, str(token.token_number), token.token, token.output_coref_string]))
 					outfile.write('\n')
 
 				outfile.write('\n')
@@ -136,7 +139,7 @@ class Sieve(object):
 
 		for (metric, result_array) in self.metrics:
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
-			print doc_result.split('\n')[-3] #grab line with overall results
+			#print doc_result.split('\n')[-3] #grab line with overall results
 			with open('results/result{}.txt'.format(str(result_num)), 'w') as scorefile:
 				scorefile.write(doc_result)
 			result_array += self.result2array(doc_result.split('\n')[-3])
