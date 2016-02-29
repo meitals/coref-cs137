@@ -31,6 +31,7 @@ class Token(object):
 		self.args = []
 		self.coref_ids = []
 		self.output_ids = [] # derived from our work
+		self.output_coref_string = ''
 	
 class Sentence(object):
 	def __init__(self, sent_list, sent_number):
@@ -107,6 +108,7 @@ class Entity:
 		self.parse = parse
 		self.filename = filename
 		self.ne_type = ne_type
+		self.parse_string = " ".join([token.parse_bit for token in tokens]) # concatenate the parsebits
 
 
 class Document(object):
@@ -153,18 +155,34 @@ class Document(object):
 
 	def create_entities_and_clear_dict(self, sentence, entities_in_progress, nums_to_clear):
 		for row in nums_to_clear:
-			self.create_entity(entities_in_progress[row], sentence) 
-			del entities_in_progress[row]  # remove it from the holding tank
+			self.create_entity(entities_in_progress[row], sentence)
 
-	def get_parse(self, token_list):
-		for t in self.tokens:
-			#parse
-			parse_string = t.parse_bit.replace('*', '({} {})'.format(t.pos, t.token))
-			parse_string = re.sub(r'([A-Z])(\()', r'\1 (', parse_string)
-			#if I use an escape character here ^ that ends up in the tree
-			parse_string = parse_string.replace(')(', ') (')
-			self.parse += parse_string
-		return nltk.tree.Tree.fromstring(self.parse)
+			new_dict = entities_in_progress.copy()
+			entities_in_progress = new_dict
+
+
+	def smallest_subtree(self, tree, token_sequence, smallest=[]):
+		"""
+			Smallest subtree from tree that contains token_sequence
+			Used to find the parse of a particular entity
+		"""
+		if self.words_in_tree(tree, token_sequence):
+			smallest = tree
+			for child in tree:
+				if isinstance(child, nltk.tree.Tree):
+					smallest = self.smallest_subtree(child, token_sequence, smallest)
+		else: 
+			return smallest
+		return smallest
+
+
+	def words_in_tree(self, tree, token_sequence):
+		"""
+			checks to see if the token sequence appears in the tree
+		"""
+		tree_words = " ".join(tree.leaves())
+		target = " ".join([token.token for token in token_sequence])
+		return target in tree_words
 
 
 	def create_entity(self, token_list, sentence):
@@ -174,7 +192,7 @@ class Document(object):
 		self.entities.append(Entity(sentence.sent_number,
 									token_list,
 									" ".join([token.token for token in token_list]),
-									"PARSE", 
+									self.smallest_subtree(sentence.parse_tree, token_list), 
 									token_list[0].ne, 
 									token_list[0].filename))
 
@@ -198,6 +216,7 @@ class Document(object):
 			if c[num] > 1:
 				return num
 		return None
+
 
 	def load_sents(self):
 		with open(self.fpath) as conllfile:
@@ -230,5 +249,12 @@ class Corpus(object):
 
 if __name__ == '__main__':
 	conll_corpus = Corpus('project2/conll-2012/train')
-	print [entity.full_string for entity in conll_corpus.documents[0].entities]
-		
+	ent = conll_corpus.documents[0].entities[0]
+	print (ent.sentence_index)
+	print (ent.tokens)
+	print (ent.full_string)
+	print (ent.parse)
+	print (ent.filename)
+	print (ent.ne_type)
+	print (ent.parse_string)
+
