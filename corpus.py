@@ -135,13 +135,14 @@ class Document(object):
 			Stores them in Document.entities
 		"""	
 		# take care of reflexive entities--ie multp. of same coref id on same line
-		self.make_entities_from_duplicate_ids(sentence)
+		#self.make_entities_from_duplicate_ids(sentence)
 
 		# now do the regular chains
 		entities_in_progress = {}  #stores entities currently being built
 		for index, token in enumerate(sentence.tokens):
 			if not token.coref_ids:  # this isn't an entity. Creates and removes all in progress
 				self.create_entities_and_clear_dict(sentence, entities_in_progress, entities_in_progress.keys())
+				entities_in_progress = {}
 			else: # this is an entity; create/remove selectively.
 				for cid in token.coref_ids:
 					if cid in entities_in_progress:
@@ -150,15 +151,18 @@ class Document(object):
 						entities_in_progress[cid] = [token]
 					# clear not in prog
 					nums_to_clear = [cid for cid in entities_in_progress.keys() if cid not in token.coref_ids]
-					self.create_entities_and_clear_dict(sentence, entities_in_progress, nums_to_clear)
+					entities_in_progress = self.create_entities_and_clear_dict(sentence, entities_in_progress, nums_to_clear)
+
 
 
 	def create_entities_and_clear_dict(self, sentence, entities_in_progress, nums_to_clear):
 		for row in nums_to_clear:
 			self.create_entity(entities_in_progress[row], sentence)
+			del entities_in_progress[row]
+		return entities_in_progress
 
-			new_dict = entities_in_progress.copy()
-			entities_in_progress = new_dict
+			# new_dict = entities_in_progress.copy()
+			# entities_in_progress = new_dict
 
 
 	def smallest_subtree(self, tree, token_sequence, smallest=[]):

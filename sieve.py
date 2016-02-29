@@ -1,5 +1,5 @@
 from corpus import *
-#from sieve_modules import *
+from sieve_modules import *
 import numpy as np
 import subprocess, shutil
 
@@ -28,11 +28,13 @@ class Sieve(object):
 		for doc in self.conll_corpus.documents:
 			#each entity starts out as a singleton
 			doc.chains = [[ent] for ent in doc.entities]
+			#print [[ent.full_string] for ent in doc.entities]
 
 			######INSERT SIEVES HERE######
 			###sieves modify doc.chains###
-
-
+			
+			doc.chains = exact_match(doc.entities, doc.chains)
+			
 			########END SIEVES###########
 
 			self.find_output(doc)
@@ -40,7 +42,7 @@ class Sieve(object):
 			self.write_response(doc, response_fpath) 
 			self.score_document(doc, response_fpath)
 
-		self.write_results()
+		#self.write_results()
 
 			
 	def find_output(self, document):
@@ -61,7 +63,10 @@ class Sieve(object):
 		#format to write coref chains to response file
 		for sent in document.sentences:
 			for token in sent.tokens:
-				if len(token.output_ids) == 1:
+				if len(token.output_ids) == 0:
+					token.output_coref_string = '-'
+
+				elif len(token.output_ids) == 1:
 					#token part of entity that is in one coref chain
 
 					chain_id = token.output_ids[0][0]
@@ -115,7 +120,8 @@ class Sieve(object):
 
 		for (metric, result_array) in self.metrics:
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
-			result_array += np.array(doc_result)
+			print doc_result.split('\n')[-3]
+			#result_array += np.array(doc_result)
 
 	def write_results(self):
 		"""write file with final precision/recall/fmeasure"""
