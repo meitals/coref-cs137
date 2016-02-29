@@ -42,7 +42,7 @@ class Sieve(object):
 			self.write_response(doc, response_fpath) 
 			self.score_document(doc, response_fpath)
 
-		#self.write_results()
+		self.write_results()
 
 			
 	def find_output(self, document):
@@ -112,6 +112,15 @@ class Sieve(object):
 				outfile.write('\n')
 
 
+	def result2array(self, result_string):
+		result_list = result_string.split()
+		rec_num = float(result_list[2][1:])
+		rec_denom = float(result_list[4][:-1])
+		prec_num = float(result_list[7][1:])
+		prec_denom = float(result_list[9][:-1])
+
+		return np.array([rec_num, rec_denom, prec_num, prec_denom])
+
 	def score_document(self, document, response_fpath):
 		"""runs scorer for all metric and updates results"""
 		key_file = document.fpath
@@ -120,8 +129,8 @@ class Sieve(object):
 
 		for (metric, result_array) in self.metrics:
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
-			print doc_result.split('\n')[-3]
-			#result_array += np.array(doc_result)
+			print doc_result.split('\n')[-3] #grab line with overall results
+			result_array += self.result2array(doc_result.split('\n')[-3])
 
 	def write_results(self):
 		"""write file with final precision/recall/fmeasure"""
@@ -129,7 +138,7 @@ class Sieve(object):
 			for (metric, result_array) in self.metrics:
 				recall = result_array[0]/result_array[1]
 				precision = result_array[2]/result_array[3]
-				f1measure = 2 * precision * recall / (precision * recall)
+				f1measure = 2 * precision * recall / (precision + recall)
 				resultsfile.write('Metric: {}\tPrecision: {}\tRecall: {}\tF1Measure: {}\n'.format(metric, precision, recall, f1measure))
 
 if __name__ == '__main__':
