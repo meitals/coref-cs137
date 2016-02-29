@@ -34,7 +34,7 @@ class Sieve(object):
 			###sieves modify doc.chains###
 			
 			doc.chains = exact_match(doc.entities, doc.chains)
-			#doc.chains = precise_constructs(doc.entities, doc.chains, doc)
+			doc.chains = precise_constructs(doc.entities, doc.chains, doc)
 			#doc.chains = cluster_head_match(doc.entities, doc.chains)
 			
 			########END SIEVES###########
@@ -138,8 +138,13 @@ class Sieve(object):
 		os.mkdir('results') 
 
 		for (metric, result_array) in self.metrics:
+			print(response_file)
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
+<<<<<<< HEAD
 			#print doc_result.split('\n')[-3] #grab line with overall results
+=======
+			print(doc_result.split('\n')[-3]) #grab line with overall results
+>>>>>>> 7cda609cd6b6155216f403a36504846890dbf82f
 			with open('results/result{}.txt'.format(str(result_num)), 'w') as scorefile:
 				scorefile.write(doc_result)
 			result_array += self.result2array(doc_result.split('\n')[-3])
