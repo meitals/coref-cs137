@@ -31,6 +31,8 @@ def exact_match(entity_list, coreference_chains):
 	return chains
 
 def precise_constructs(entity_list, coreference_chains, document):
+	"""Looks for various precise syntactic constructs"""
+	print("Trying precise constructs")
 	chains = []
 	for coref_chain in coreference_chains:
 		for chain in chains:
@@ -81,23 +83,23 @@ def get_between_tokens(entity1, entity2, document):
 	output = []
 	words = []
 	if tokens1[0].sent_number == tokens2[0].sent_number:
-		sent_number = tokens1.sent_number
+		sent_number = tokens1[0].sent_number
 		if tokens1[0].token_number <= tokens2[0].token_number:
 			if tokens1[-1].token_number >= tokens2[0].token_number: # Entity1 overlaps with entity2
 				return [],""
 			else:
-				for i in range(tokens1[-1],tokens2[0]):
-					output.append(document.sentences[sent_number][i].tokens[i])
-					words.append(document.sentences[sent_number][i].tokens[i].token)
+				for i in range(tokens1[-1].token_number,tokens2[0].token_number):
+					output.append(document.sentences[sent_number].tokens[i])
+					words.append(document.sentences[sent_number].tokens[i].token)
 		elif tokens2[0].token_number <= tokens1[0].token_number:
 			if tokens2[-1].token_number >= tokens1[0].token_number: # Entity1 overlaps with entity2
 				return [],""
 			else:
-				for i in range(tokens2[-1],tokens1[0]):
-					output.append(document.sentences[sent_number][i].tokens[i])
-					words.append(document.sentences[sent_number][i].tokens[i].token)
+				for i in range(tokens2[-1].token_number,tokens1[0].token_number):
+					output.append(document.sentences[sent_number].tokens[i])
+					words.append(document.sentences[sent_number].tokens[i].token)
 	else:
-		return None
+		return None, ""
 	return output," ".join(words)
 
 
