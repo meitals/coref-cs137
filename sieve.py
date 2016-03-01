@@ -36,7 +36,6 @@ class Sieve(object):
 			doc.chains = exact_match(doc.entities, doc.chains)
 			#doc.chains = precise_constructs(doc.entities, doc.chains, doc)
 			#doc.chains = cluster_head_match(doc.entities, doc.chains)
-			#doc.chains = word_inclusion(doc.entities, doc.chains)
 			
 			########END SIEVES###########
 
