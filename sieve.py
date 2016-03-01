@@ -35,14 +35,14 @@ class Sieve(object):
 			###sieves modify doc.chains###
 			print(doc.fpath)
 			doc.chains = exact_match(doc.entities, doc.chains)
-			doc.chains = precise_constructs(doc.entities, doc.chains, doc)
-			doc.chains = cluster_head_match(doc.entities, doc.chains)
-			doc.chains = word_inclusion(doc.entities, doc.chains)
+			# doc.chains = precise_constructs(doc.entities, doc.chains, doc)
+			# doc.chains = cluster_head_match(doc.entities, doc.chains)
+			# doc.chains = word_inclusion(doc.entities, doc.chains)
 			
 			########END SIEVES###########
 
 			#ignore singletons
-			doc.chains = [chain for chain in doc.chains if len(chain) > 1]
+			#doc.chains = [chain for chain in doc.chains if len(chain) > 1]
 
 			self.find_output(doc)
 			response_fpath = 'responses/{}.response'.format(os.path.basename(doc.fpath))
@@ -108,7 +108,11 @@ class Sieve(object):
 		with open(fpath, 'w') as outfile:
 			
 			curr_doc_part = '0'
-			outfile.write('#begin document ({}); part 000\n'.format(document.fpath))
+			if len(document.sentences) > 0 and len(document.sentences[0].tokens) > 0:
+				filename = document.sentences[0].tokens[0].filename
+				outfile.write('#begin document ({}); part 000\n'.format(filename))
+			else:
+				outfile.write('#begin document ({}); part 000\n'.format(document.fpath))
 			for sent in document.sentences:
 				for token in sent.tokens:
 					if token.part_number != curr_doc_part:
@@ -117,8 +121,9 @@ class Sieve(object):
 						curr_doc_part = token.part_number
 					outfile.write(' '.join([token.filename, token.part_number, str(token.token_number), token.token, token.output_coref_string]))
 					outfile.write('\n')
-
 				outfile.write('\n')
+			outfile.write('#end document\n')
+
 
 
 	def result2array(self, result_string):
@@ -140,9 +145,10 @@ class Sieve(object):
 			os.mkdir('results') 
 
 		for (metric, result_array) in self.metrics:
+			print scorer_path, metric, key_file, response_file
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
 			print doc_result.split('\n')[-3] #grab line with overall results
-			with open('results/result{}.txt'.format(str(result_num)), 'w') as scorefile:
+			with open('results/result{}.txt'.format(str(result_num)), 'a') as scorefile:
 				scorefile.write(doc_result)
 			result_array += self.result2array(doc_result.split('\n')[-3])
 

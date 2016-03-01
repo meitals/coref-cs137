@@ -16,15 +16,15 @@ def exact_match(entity_list, coreference_chains):
 		found_chain = False
 		for chain in chains:
 			if entity.full_string == chain[0].full_string: # For exact match, assume all are the same
-				found_proper = False
-				for token in entity.tokens:
-					if "NN" in token.pos: # Don't assume pronouns match
-						found_proper = True
-						break
-				if not found_proper:
-					continue
-				if entity in chain:
-					continue
+				# found_proper = False
+				# for token in entity.tokens:
+				# 	if "NN" in token.pos: # Don't assume pronouns match
+				# 		found_proper = True
+				# 		break
+				# if not found_proper:
+				# 	continue
+				# if entity in chain:
+				# 	continue
 				chain.append(entity)
 				found_chain = True
 				write_log("Found exact match", entity, chain[0])
@@ -75,12 +75,12 @@ def precise_constructs(entity_list, coreference_chains, document):
 										break
 							if len(between_tokens) > 1:
 								# Find relative pronoun constructions
-								# if "which" or "that" in between_words:
-								# 	coref_chain.extend(chain)
-								# 	chains.remove(chain)
-								# 	merged_chain = True
-								# 	write_log("Relative pronouns",entity,coref_entity)
-								# 	break
+								if "which" or "that" in between_words:
+									coref_chain.extend(chain)
+									chains.remove(chain)
+									merged_chain = True
+									write_log("Relative pronouns",entity,coref_entity)
+									break
 								if is_acronym(entity, coref_entity):
 									chain.extend(coref_chain)
 									merged_chain = True
