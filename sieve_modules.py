@@ -166,7 +166,7 @@ def cluster_head_match(entity_list, coreference_chains):
 				for entity in chain:
 					# Right now use only people to be more precise
 					#if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
-					if len(coref_entity.ne_type) > 0 and coref_entity.ne_type == entity.ne_type:
+					if coref_entity.ne_type != None and coref_entity.ne_type == entity.ne_type:
 						#if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
 						if token_match(coref_entity, entity):
 							chain.extend(coref_chain)
