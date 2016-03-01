@@ -38,7 +38,9 @@ class Sieve(object):
 			#doc.chains = cluster_head_match(doc.entities, doc.chains)
 			
 			########END SIEVES###########
-
+			
+			#ignore singletons
+			doc.chains = [chain for chain in doc.chains if len(chain) > 1]
 
 			self.find_output(doc)
 			response_fpath = 'responses/{}.response'.format(os.path.basename(doc.fpath))
