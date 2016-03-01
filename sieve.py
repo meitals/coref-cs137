@@ -1,3 +1,4 @@
+from __future__ import division
 from corpus import *
 from sieve_modules import *
 import numpy as np
