@@ -150,8 +150,38 @@ def demonym(entity_list, coreference_chains):
 	"""Doesn't show up often in training files"""
 	pass
 
+# def cluster_head_match(entity_list, coreference_chains):
+# 	#print("Trying cluster_head_match")
+# 	chains = []
+# 	if len(coreference_chains) < 2:
+# 		return coreference_chains
+# 	else:
+# 		chains.append(coreference_chains[0])
+# 	for coref_chain in coreference_chains:
+# 		merged_chain = False
+# 		for chain in chains:
+# 			if chain == coref_chain:
+# 				merged_chain = True
+# 				break			
+# 			for coref_entity in coref_chain:
+# 				for entity in chain:
+# 					# Right now use only people to be more precise
+# 					if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
+# 					#if coref_entity.ne_type != None and coref_entity.ne_type == entity.ne_type:
+# 						#if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
+# 						if token_match(coref_entity, entity):
+# 							chain.extend(coref_chain)
+# 							merged_chain = True
+# 							write_log("Cluster head match",entity,coref_entity)
+# 							break
+# 				if merged_chain:
+# 					break
+# 		if not merged_chain:										
+# 			chains.append(coref_chain)
+# 	return chains
+
 def cluster_head_match(entity_list, coreference_chains):
-	#print("Trying cluster_head_match")
+	#print("Trying word inclusion")
 	chains = []
 	if len(coreference_chains) < 2:
 		return coreference_chains
@@ -162,9 +192,9 @@ def cluster_head_match(entity_list, coreference_chains):
 		for chain in chains:
 			if chain == coref_chain:
 				merged_chain = True
-				break			
+				break
 			for coref_entity in coref_chain:
-				for entity in chain:
+				for entity in chain:	
 					# Right now use only people to be more precise
 					if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
 					#if coref_entity.ne_type != None and coref_entity.ne_type == entity.ne_type:
@@ -176,10 +206,11 @@ def cluster_head_match(entity_list, coreference_chains):
 							break
 				if merged_chain:
 					break
-		if not merged_chain:										
+			if merged_chain:
+				break
+		if not merged_chain:
 			chains.append(coref_chain)
-		print len(coreference_chains),len(chains)
-	return chains
+	return chains		
 
 def token_match(entity1,entity2):
 	"""Returns whether the given entities have a string match in the tokens"""
