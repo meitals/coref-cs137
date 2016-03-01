@@ -2,6 +2,7 @@
 
 import re
 from corpus import Document
+from nltk.corpus import stopwords
 
 WRITE_LOG = True
 LOGFILE = open("sieve_functions.log","w")
@@ -156,8 +157,41 @@ def cluster_head_match(entity_list, coreference_chains):
 		chains.append(coref_chain)
 	return coreference_chains
 
+
 def word_inclusion(entity_list, coreference_chains):
-	pass
+	chains = []
+	for coref_chain in coreference_chains:
+		for chain in chains:
+			merged_chain = False
+			for coref_entity in coref_chain:
+				for entity in chain:	
+					coref_entity_words = [token.token for token in coref_entity.tokens]
+					entity_words = [token.token for token in entity.tokens]
+					if have_same_words(coref_entity_words, entity_words):
+						coref_chain.extend(chain)
+						chains.remove(chain)
+						write_log("Word inclusion", entity, coref_entity)	
+						merged_chain = True
+						break
+				if merged_chain:
+					break
+			if merged_chain:
+				break
+		chains.append(coref_chain)
+	return coreference_chains					
+
+
+def have_same_words(list_a, list_b):
+	"""
+		Checks if deduplicated sets of words in list_a and list_b are the same, 
+		excluding stopwords
+	"""
+	stop_words = stopwords.words('english') # list of lowercase eng stopwords
+	list_a = [x.lower() for x in list_a if x.lower() not in stop_words]
+	list_b = [x.lower() for x in list_b if x.lower() not in stop_words]
+	# the 'not not's ensure the sets aren't empty. Sorry for the wierd syntax.
+	return set(list_a) == set(list_b) and (not (not set(list_a))) and (not (not set(list_b)))
+
 
 def compatible_modifiers(entity_list, coreference_chains):
 	pass
