@@ -10,7 +10,7 @@ LOGFILE = open("sieve_functions.log","w")
 def exact_match(entity_list, coreference_chains):
 	"""First pass of the sieve: looks for exact 
 	full_string matches"""
-	print("Trying exact match")
+	#print("Trying exact match")
 	chains = []
 	for entity in entity_list:
 		found_chain = False
@@ -18,7 +18,7 @@ def exact_match(entity_list, coreference_chains):
 			if entity.full_string == chain[0].full_string: # For exact match, assume all are the same
 				found_proper = False
 				for token in entity.tokens:
-					if "NNP" in token.pos: # Don't assume pronouns match
+					if "NN" in token.pos: # Don't assume pronouns match
 						found_proper = True
 						break
 				if not found_proper:
@@ -35,7 +35,7 @@ def exact_match(entity_list, coreference_chains):
 
 def precise_constructs(entity_list, coreference_chains, document):
 	"""Looks for various precise syntactic constructs"""
-	print("Trying precise constructs")
+	#print("Trying precise constructs")
 	chains = []
 	if len(coreference_chains) < 2:
 		return coreference_chains
@@ -54,7 +54,8 @@ def precise_constructs(entity_list, coreference_chains, document):
 						if "NP" in entity.parse_string and "NP" in coref_entity.parse_string:
 							if len(between_tokens) <= 1: 
 								# Look for role appositives
-								if len(between_tokens) == 0 and (entity.ne_type == "PERSON" or coref_entity.ne_type == "PERSON"):
+								if (len(between_tokens) == 0 and between_words != "overlap"
+									and (entity.ne_type == "PERSON" and coref_entity.ne_type == "PERSON")):
 										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Role appositive",entity,coref_entity)
@@ -105,14 +106,14 @@ def get_between_tokens(entity1, entity2, document):
 		sent_number = tokens1[0].sent_number
 		if tokens1[0].token_number <= tokens2[0].token_number:
 			if tokens1[-1].token_number >= tokens2[0].token_number: # Entity1 overlaps with entity2
-				return [],""
+				return [],"overlap"
 			else:
 				for i in range(tokens1[-1].token_number,tokens2[0].token_number):
 					output.append(document.sentences[sent_number].tokens[i])
 					words.append(document.sentences[sent_number].tokens[i].token)
 		elif tokens2[0].token_number <= tokens1[0].token_number:
 			if tokens2[-1].token_number >= tokens1[0].token_number: # Entity1 overlaps with entity2
-				return [],""
+				return [],"overlap"
 			else:
 				for i in range(tokens2[-1].token_number,tokens1[0].token_number):
 					output.append(document.sentences[sent_number].tokens[i])
@@ -129,19 +130,19 @@ def write_log(msg, entity1, entity2):
 
 def is_acronym(entity1, entity2):
 	"""Returns whether the entity is an acronym from an NE"""
-	if not entity1.full_string == entity2.full_string:
+	if len(entity1.full_string.strip()) > 0 and len(entity2.full_string.strip()) > 0 and entity1.full_string != entity2.full_string:
 		acronym = []
 		for token in entity1.tokens:
 			acronym.append(token.token[0])
 		acronym = "".join(acronym)
-		if len(acronym) > 0 and acronym == entity2.full_string:
+		if acronym == entity2.full_string:
 			return True
 		else:
 			acronym = []
 			for token in entity2.tokens:
 				acronym.append(token.token[0])
 			acronym = "".join(acronym)
-			if len(acronym) > 0 and acronym == entity1.full_string:
+			if acronym == entity1.full_string:
 				return True
 	return False
 
@@ -150,7 +151,7 @@ def demonym(entity_list, coreference_chains):
 	pass
 
 def cluster_head_match(entity_list, coreference_chains):
-	print("Trying cluster_head_match")
+	#print("Trying cluster_head_match")
 	chains = []
 	if len(coreference_chains) < 2:
 		return coreference_chains
@@ -164,8 +165,10 @@ def cluster_head_match(entity_list, coreference_chains):
 			for coref_entity in coref_chain:
 				for entity in chain:
 					# Right now use only people to be more precise
-					if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
-						if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
+					#if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
+					if len(coref_entity.ne_type) > 0 and coref_entity.ne_type == entity.ne_type:
+						#if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
+						if token_match(coref_entity, entity):
 							chain.extend(coref_chain)
 							merged_chain = True
 							write_log("Cluster head match",entity,coref_entity)
@@ -176,10 +179,25 @@ def cluster_head_match(entity_list, coreference_chains):
 			chains.append(coref_chain)
 	return chains
 
-
+def token_match(entity1,entity2):
+	"""Returns whether the given entities have a string match in the tokens"""
+	full_string1 = entity1.full_string
+	full_string2 = entity2.full_string
+	if full_string2.startswith(full_string1+" "):
+		return True
+	if full_string1.startswith(full_string2+" "):
+		return True
+	if full_string1.endswith(" "+full_string2):
+		return True
+	if full_string2.endswith(" "+full_string1):
+		return True
+	if " "+full_string1+" " in full_string2:
+		return True
+	if " "+full_string2+" " in full_string1:
+		return True
 
 def word_inclusion(entity_list, coreference_chains):
-	print("Trying word inclusion")
+	#print("Trying word inclusion")
 	chains = []
 	if len(coreference_chains) < 2:
 		return coreference_chains

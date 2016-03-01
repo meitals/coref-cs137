@@ -32,7 +32,7 @@ class Sieve(object):
 
 			######INSERT SIEVES HERE######
 			###sieves modify doc.chains###
-			
+			print(doc.fpath)
 			doc.chains = exact_match(doc.entities, doc.chains)
 			doc.chains = precise_constructs(doc.entities, doc.chains, doc)
 			doc.chains = cluster_head_match(doc.entities, doc.chains)
