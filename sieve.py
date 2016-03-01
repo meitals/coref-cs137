@@ -41,6 +41,8 @@ class Sieve(object):
 			
 			#ignore singletons
 			doc.chains = [chain for chain in doc.chains if len(chain) > 1]
+			# for chain in doc.chains:
+			# 	chain = list(set(chain))
 
 			self.find_output(doc)
 			response_fpath = 'responses/{}.response'.format(os.path.basename(doc.fpath))
