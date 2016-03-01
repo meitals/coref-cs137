@@ -16,15 +16,15 @@ def exact_match(entity_list, coreference_chains):
 		found_chain = False
 		for chain in chains:
 			if entity.full_string == chain[0].full_string: # For exact match, assume all are the same
-				# found_proper = False
-				# for token in entity.tokens:
-				# 	if "NN" in token.pos: # Don't assume pronouns match
-				# 		found_proper = True
-				# 		break
-				# if not found_proper:
-				# 	continue
-				# if entity in chain:
-				# 	continue
+				found_proper = False
+				for token in entity.tokens:
+					if "NN" in token.pos: # Don't assume pronouns match
+						found_proper = True
+						break
+				if not found_proper:
+					continue
+				if entity in chain:
+					continue
 				chain.append(entity)
 				found_chain = True
 				write_log("Found exact match", entity, chain[0])
@@ -75,12 +75,12 @@ def precise_constructs(entity_list, coreference_chains, document):
 										break
 							if len(between_tokens) > 1:
 								# Find relative pronoun constructions
-								if "which" or "that" in between_words:
-									coref_chain.extend(chain)
-									chains.remove(chain)
-									merged_chain = True
-									write_log("Relative pronouns",entity,coref_entity)
-									break
+								# if "which" or "that" in between_words:
+								# 	coref_chain.extend(chain)
+								# 	chains.remove(chain)
+								# 	merged_chain = True
+								# 	write_log("Relative pronouns",entity,coref_entity)
+								# 	break
 								if is_acronym(entity, coref_entity):
 									chain.extend(coref_chain)
 									merged_chain = True
@@ -158,6 +158,7 @@ def cluster_head_match(entity_list, coreference_chains):
 	else:
 		chains.append(coreference_chains[0])
 	for coref_chain in coreference_chains:
+		merged_chain = False
 		for chain in chains:
 			if chain == coref_chain:
 				merged_chain = True
@@ -165,8 +166,8 @@ def cluster_head_match(entity_list, coreference_chains):
 			for coref_entity in coref_chain:
 				for entity in chain:
 					# Right now use only people to be more precise
-					#if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
-					if coref_entity.ne_type != None and coref_entity.ne_type == entity.ne_type:
+					if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
+					#if coref_entity.ne_type != None and coref_entity.ne_type == entity.ne_type:
 						#if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
 						if token_match(coref_entity, entity):
 							chain.extend(coref_chain)
@@ -177,12 +178,22 @@ def cluster_head_match(entity_list, coreference_chains):
 					break
 		if not merged_chain:										
 			chains.append(coref_chain)
+		print len(coreference_chains),len(chains)
 	return chains
 
 def token_match(entity1,entity2):
 	"""Returns whether the given entities have a string match in the tokens"""
 	full_string1 = entity1.full_string
 	full_string2 = entity2.full_string
+	found_proper = False
+	for token in entity1.tokens:
+		if "NNP" in token.pos:
+			found_proper = True
+	for token in entity2.tokens:
+		if "NNP" in token.pos:
+			found_proper = True
+	if not found_proper:
+		return False
 	if full_string2.startswith(full_string1+" "):
 		return True
 	if full_string1.startswith(full_string2+" "):
