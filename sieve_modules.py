@@ -22,6 +22,8 @@ def exact_match(entity_list, coreference_chains):
 						break
 				if not found_proper:
 					continue
+				if entity in chain:
+					continue
 				chain.append(entity)
 				found_chain = True
 				write_log("Found exact match", entity, chain[0])
@@ -34,9 +36,16 @@ def precise_constructs(entity_list, coreference_chains, document):
 	"""Looks for various precise syntactic constructs"""
 	print("Trying precise constructs")
 	chains = []
+	if len(coreference_chains) < 2:
+		return coreference_chains
+	else:
+		chains.append(coreference_chains[0])
 	for coref_chain in coreference_chains:
+		merged_chain = False
 		for chain in chains:
-			merged_chain = False
+			if chain == coref_chain:
+				merged_chain = True
+				break
 			for entity in chain:
 				for coref_entity in coref_chain:
 					between_tokens, between_words = get_between_tokens(entity, coref_entity, document)
@@ -45,23 +54,26 @@ def precise_constructs(entity_list, coreference_chains, document):
 							if len(between_tokens) <= 1: 
 								# Look for role appositives
 								if len(between_tokens) == 0 and (entity.ne_type == "PERSON" or coref_entity.ne_type == "PERSON"):
-										coref_chain.extend(chain)
-										chains.remove(chain)
+										# coref_chain.extend(chain)
+										# chains.remove(chain)
+										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Role appositive",entity,coref_entity)
 										break
 								if len(between_tokens) == 1: 
 									# Look for appositive constructions
 									if between_tokens[0].token == ",":
-										coref_chain.extend(chain)
-										chains.remove(chain)
+										# coref_chain.extend(chain)
+										# chains.remove(chain)
+										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Appositive",entity,coref_entity)
 										break
 									# Look for predicate nominatives
 									if between_tokens[0].pos == "VBZ" or between_tokens[0].pos == "VBD":
-										coref_chain.extend(chain)
-										chains.remove(chain)
+										# coref_chain.extend(chain)
+										# chains.remove(chain)
+										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Predicate nominative",entity,coref_entity)
 										break
@@ -74,8 +86,9 @@ def precise_constructs(entity_list, coreference_chains, document):
 								# 	write_log("Relative pronouns",entity,coref_entity)
 								# 	break
 								if is_acronym(entity, coref_entity):
-									coref_chain.extend(chain)
-									chains.remove(chain)
+									# coref_chain.extend(chain)
+									# chains.remove(chain)
+									chain.extend(coref_chain)
 									merged_chain = True
 									write_log("Acronyms",entity,coref_entity)
 									break
@@ -83,8 +96,11 @@ def precise_constructs(entity_list, coreference_chains, document):
 						break
 				if merged_chain:
 					break
-		chains.append(coref_chain)
-	return coreference_chains
+			if merged_chain:
+				break
+		if not merged_chain:
+			chains.append(coref_chain)
+	return chains
 
 def get_between_tokens(entity1, entity2, document):
 	"""Returns list of tokens between two entities"""
@@ -116,7 +132,7 @@ def get_between_tokens(entity1, entity2, document):
 def write_log(msg, entity1, entity2):
 	if WRITE_LOG:
 		LOGFILE.write(msg+"\t"+entity1.full_string+"\t"+entity2.full_string+"\t" +entity1.filename+"\t"+str(entity1.sentence_index)+"\t"+str(entity2.sentence_index)+"\n")
-		print(msg+"\t"+entity1.full_string+"\t"+entity2.full_string+"\t" +entity1.filename+"\t"+str(entity1.sentence_index)+"\t"+str(entity2.sentence_index)+"\n")
+		#print(msg+"\t"+entity1.full_string+"\t"+entity2.full_string+"\t" +entity1.filename+"\t"+str(entity1.sentence_index)+"\t"+str(entity2.sentence_index)+"\n")
 
 def is_acronym(entity1, entity2):
 	"""Returns whether the entity is an acronym from an NE"""
@@ -125,14 +141,14 @@ def is_acronym(entity1, entity2):
 		for token in entity1.tokens:
 			acronym.append(token.token[0])
 		acronym = "".join(acronym)
-		if acronym == entity2.full_string:
+		if len(acronym) > 0 and acronym == entity2.full_string:
 			return True
 		else:
 			acronym = []
 			for token in entity2.tokens:
 				acronym.append(token.token[0])
 			acronym = "".join(acronym)
-			if acronym == entity1.full_string:
+			if len(acronym) > 0 and acronym == entity1.full_string:
 				return True
 	return False
 
