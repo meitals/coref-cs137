@@ -2,6 +2,7 @@
 
 import re
 from corpus import Document
+from nltk.corpus import stopwords
 
 WRITE_LOG = True
 LOGFILE = open("sieve_functions.log","w")
@@ -54,8 +55,6 @@ def precise_constructs(entity_list, coreference_chains, document):
 							if len(between_tokens) <= 1: 
 								# Look for role appositives
 								if len(between_tokens) == 0 and (entity.ne_type == "PERSON" or coref_entity.ne_type == "PERSON"):
-										# coref_chain.extend(chain)
-										# chains.remove(chain)
 										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Role appositive",entity,coref_entity)
@@ -63,16 +62,12 @@ def precise_constructs(entity_list, coreference_chains, document):
 								if len(between_tokens) == 1: 
 									# Look for appositive constructions
 									if between_tokens[0].token == ",":
-										# coref_chain.extend(chain)
-										# chains.remove(chain)
 										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Appositive",entity,coref_entity)
 										break
 									# Look for predicate nominatives
 									if between_tokens[0].pos == "VBZ" or between_tokens[0].pos == "VBD":
-										# coref_chain.extend(chain)
-										# chains.remove(chain)
 										chain.extend(coref_chain)
 										merged_chain = True
 										write_log("Predicate nominative",entity,coref_entity)
@@ -86,8 +81,6 @@ def precise_constructs(entity_list, coreference_chains, document):
 								# 	write_log("Relative pronouns",entity,coref_entity)
 								# 	break
 								if is_acronym(entity, coref_entity):
-									# coref_chain.extend(chain)
-									# chains.remove(chain)
 									chain.extend(coref_chain)
 									merged_chain = True
 									write_log("Acronyms",entity,coref_entity)
@@ -157,23 +150,75 @@ def demonym(entity_list, coreference_chains):
 	pass
 
 def cluster_head_match(entity_list, coreference_chains):
+	print("Trying cluster_head_match")
 	chains = []
+	if len(coreference_chains) < 2:
+		return coreference_chains
+	else:
+		chains.append(coreference_chains[0])
 	for coref_chain in coreference_chains:
 		for chain in chains:
+			if chain == coref_chain:
+				merged_chain = True
+				break			
 			for coref_entity in coref_chain:
 				for entity in chain:
 					# Right now use only people to be more precise
 					if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
 						if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
-							coref_chain.extend(chain)
-							chains.remove(chain)
+							chain.extend(coref_chain)
+							merged_chain = True
 							write_log("Cluster head match",entity,coref_entity)
-							continue							
-		chains.append(coref_chain)
-	return coreference_chains
+							break
+				if merged_chain:
+					break
+		if not merged_chain:										
+			chains.append(coref_chain)
+	return chains
+
 
 def word_inclusion(entity_list, coreference_chains):
-	pass
+	print("Trying word inclusion")
+	chains = []
+	if len(coreference_chains) < 2:
+		return coreference_chains
+	else:
+		chains.append(coreference_chains[0])
+	for coref_chain in coreference_chains:
+		merged_chain = False
+		for chain in chains:
+			if chain == coref_chain:
+				merged_chain = True
+				break
+			for coref_entity in coref_chain:
+				for entity in chain:	
+					coref_entity_words = [token.token for token in coref_entity.tokens]
+					entity_words = [token.token for token in entity.tokens]
+					if have_same_words(coref_entity_words, entity_words):
+						chain.extend(coref_chain)
+						write_log("Word inclusion", entity, coref_entity)	
+						merged_chain = True
+						break
+				if merged_chain:
+					break
+			if merged_chain:
+				break
+		if not merged_chain:
+			chains.append(coref_chain)
+	return chains					
+
+
+def have_same_words(list_a, list_b):
+	"""
+		Checks if deduplicated sets of words in list_a and list_b are the same, 
+		excluding stopwords
+	"""
+	stop_words = stopwords.words('english') # list of lowercase eng stopwords
+	list_a = [x.lower() for x in list_a if x.lower() not in stop_words]
+	list_b = [x.lower() for x in list_b if x.lower() not in stop_words]
+	# the 'not not's ensure the sets aren't empty. Sorry for the wierd syntax.
+	return set(list_a) == set(list_b) and (not (not set(list_a))) and (not (not set(list_b)))
+
 
 def compatible_modifiers(entity_list, coreference_chains):
 	pass
