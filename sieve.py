@@ -39,6 +39,7 @@ class Sieve(object):
 			
 			########END SIEVES###########
 
+
 			self.find_output(doc)
 			response_fpath = 'responses/{}.response'.format(os.path.basename(doc.fpath))
 			self.write_response(doc, response_fpath) 
@@ -135,7 +136,6 @@ class Sieve(object):
 		os.mkdir('results') 
 
 		for (metric, result_array) in self.metrics:
-			print(response_file)
 			doc_result = subprocess.check_output([scorer_path, metric, key_file, response_file])
 			print(doc_result.split('\n')[-3]) #grab line with overall results
 			with open('results/result{}.txt'.format(str(result_num)), 'w') as scorefile:
