@@ -177,6 +177,7 @@ def cluster_head_match(entity_list, coreference_chains):
 	return chains
 
 
+
 def word_inclusion(entity_list, coreference_chains):
 	print("Trying word inclusion")
 	chains = []
@@ -205,7 +206,7 @@ def word_inclusion(entity_list, coreference_chains):
 				break
 		if not merged_chain:
 			chains.append(coref_chain)
-	return chains					
+	return chains									
 
 
 def have_same_words(list_a, list_b):
