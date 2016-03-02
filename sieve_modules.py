@@ -74,13 +74,6 @@ def precise_constructs(entity_list, coreference_chains, document):
 										write_log("Predicate nominative",entity,coref_entity)
 										break
 							if len(between_tokens) > 1:
-								# Find relative pronoun constructions
-								# if "which" or "that" in between_words:
-								# 	coref_chain.extend(chain)
-								# 	chains.remove(chain)
-								# 	merged_chain = True
-								# 	write_log("Relative pronouns",entity,coref_entity)
-								# 	break
 								if is_acronym(entity, coref_entity):
 									chain.extend(coref_chain)
 									merged_chain = True
@@ -130,17 +123,19 @@ def write_log(msg, entity1, entity2):
 
 def is_acronym(entity1, entity2):
 	"""Returns whether the entity is an acronym from an NE"""
-	if len(entity1.full_string.strip()) > 0 and len(entity2.full_string.strip()) > 0 and entity1.full_string != entity2.full_string:
+	if len(entity1.full_string.strip()) > 1 and len(entity2.full_string.strip()) > 1 and entity1.full_string != entity2.full_string:
 		acronym = []
 		for token in entity1.tokens:
-			acronym.append(token.token[0])
+			if re.match("[A-Z]",token.token[0]):
+				acronym.append(token.token[0])
 		acronym = "".join(acronym)
 		if acronym == entity2.full_string:
 			return True
 		else:
 			acronym = []
 			for token in entity2.tokens:
-				acronym.append(token.token[0])
+				if re.match("[A-Z]",token.token[0]):
+					acronym.append(token.token[0])
 			acronym = "".join(acronym)
 			if acronym == entity1.full_string:
 				return True
@@ -150,35 +145,6 @@ def demonym(entity_list, coreference_chains):
 	"""Doesn't show up often in training files"""
 	pass
 
-# def cluster_head_match(entity_list, coreference_chains):
-# 	#print("Trying cluster_head_match")
-# 	chains = []
-# 	if len(coreference_chains) < 2:
-# 		return coreference_chains
-# 	else:
-# 		chains.append(coreference_chains[0])
-# 	for coref_chain in coreference_chains:
-# 		merged_chain = False
-# 		for chain in chains:
-# 			if chain == coref_chain:
-# 				merged_chain = True
-# 				break			
-# 			for coref_entity in coref_chain:
-# 				for entity in chain:
-# 					# Right now use only people to be more precise
-# 					if coref_entity.ne_type == "PERSON" and entity.ne_type == "PERSON":
-# 					#if coref_entity.ne_type != None and coref_entity.ne_type == entity.ne_type:
-# 						#if coref_entity.full_string in entity.full_string or entity.full_string in coref_entity.full_string:
-# 						if token_match(coref_entity, entity):
-# 							chain.extend(coref_chain)
-# 							merged_chain = True
-# 							write_log("Cluster head match",entity,coref_entity)
-# 							break
-# 				if merged_chain:
-# 					break
-# 		if not merged_chain:										
-# 			chains.append(coref_chain)
-# 	return chains
 
 def cluster_head_match(entity_list, coreference_chains):
 	#print("Trying word inclusion")
@@ -224,6 +190,10 @@ def token_match(entity1,entity2):
 		if "NNP" in token.pos:
 			found_proper = True
 	if not found_proper:
+		return False
+	if "and" in full_string1 or "and" in full_string2:
+		return False
+	if "'s" in full_string1 or "'s" in full_string2:
 		return False
 	if full_string2.startswith(full_string1+" "):
 		return True
